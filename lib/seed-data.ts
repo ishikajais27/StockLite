@@ -264,21 +264,34 @@ export function recordTransaction(input: {
 //   1. Validate quantity is a positive, finite number
 //   2. Block OUT movements greater than currentStock
 //   3. Apply the movement to the correct product
-//   4. Call recordTransaction(...) so it appears in Transaction History
 export function applyStockMovement(
   productId: string,
   quantity: number,
   direction: 'IN' | 'OUT',
 ): Product {
   const product = findProduct(productId)
-  if (!product) throw new Error('Product not found')
 
-  // TODO: validate quantity (reject <= 0, NaN, etc.)
-  // TODO: for OUT, block if quantity > product.currentStock
+  if (!product) {
+    throw new Error('Product not found')
+  }
+
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error('Quantity must be a positive number')
+  }
+
+  if (direction === 'OUT' && quantity > product.currentStock) {
+    throw new Error('Insufficient stock')
+  }
 
   product.currentStock += direction === 'IN' ? quantity : -quantity
 
-  // TODO: recordTransaction({ ... })
+  recordTransaction({
+    productId: product.id,
+    productName: product.name,
+    warehouseId: product.warehouseId,
+    type: direction,
+    quantity,
+  })
 
   return product
 }
